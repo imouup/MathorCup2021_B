@@ -119,52 +119,55 @@ def predict_folder(model_path: str, input_dir: str) -> list:
     return all_results
 
 
-def save_predictions_to_csv(results: list, output_csv_path: str):
+def save_and_analyze(results: list, output_csv_path: str):
     """
-    将预测结果的核心信息保存到CSV文件。
+    计算排名，保存包含所有信息的CSV，并进行排序准确度分析。
     """
-    if not results:
-        print("没有预测结果可供保存。")
-        return
-
-    # 按“代号”排序后输出，结果更整齐
-    results.sort(key=lambda x: x['代号'])
-
-    try:
-        with open(output_csv_path, 'w', newline='', encoding='utf-8-sig') as f:
-            # 严格按照“代号,能量”的格式和顺序
-            fieldnames = ['代号', '能量']
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-
-            # 只写入需要的两列
-            for res in results:
-                writer.writerow({'代号': res['代号'], '能量': f"{res['预测能量']:.6f}"})
-
-        print(f"\n预测结果已成功保存到: '{output_csv_path}'")
-    except IOError:
-        print(f"\n错误: 无法将结果写入到 '{output_csv_path}'")
-
-
-def analyze_ranking_accuracy(results: list):
-    """计算并打印预测排序与真实排序的差异性指标。"""
     if not results or len(results) < 2:
-        print("结果不足，无法进行排序分析。")
+        print("结果不足，无法进行分析和保存。")
         return
 
-    # 1. 按预测能量和真实能量分别排序
+    # --- 1. 计算排名 ---
+    # 按预测能量和真实能量分别排序
     sorted_by_pred = sorted(results, key=lambda x: x['预测能量'])
     sorted_by_true = sorted(results, key=lambda x: x['真实能量'])
 
-    # 2. 创建从“代号”到“排名”的映射字典 (排名从0开始)
-    pred_rank_map = {res['代号']: i for i, res in enumerate(sorted_by_pred)}
-    true_rank_map = {res['代号']: i for i, res in enumerate(sorted_by_true)}
+    # 创建从“代号”到“排名”的映射 (排名从1开始，更直观)
+    pred_rank_map = {res['代号']: i + 1 for i, res in enumerate(sorted_by_pred)}
+    true_rank_map = {res['代号']: i + 1 for i, res in enumerate(sorted_by_true)}
 
-    # 3. 计算排名误差
-    rank_errors = [abs(pred_rank_map[res['代号']] - true_rank_map[res['代号']]) for res in results]
+    # --- 2. 将排名信息添加到结果列表中 ---
+    for res in results:
+        res['预测排名'] = pred_rank_map[res['代号']]
+        res['真实排名'] = true_rank_map[res['代号']]
+
+    # --- 3. 将包含完整信息的结果保存到CSV文件 ---
+    # 为了方便对比，我们按真实排名进行排序后输出
+    results.sort(key=lambda x: x['真实排名'])
+    try:
+        with open(output_csv_path, 'w', newline='', encoding='utf-8-sig') as f:
+            # 定义包含所有信息的表头
+            fieldnames = ['代号', '真实能量', '预测能量', '真实排名', '预测排名']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+
+            # 写入所有数据
+            for res in results:
+                writer.writerow({
+                    '代号': res['代号'],
+                    '真实能量': f"{res['真实能量']:.6f}",
+                    '预测能量': f"{res['预测能量']:.6f}",
+                    '真实排名': res['真实排名'],
+                    '预测排名': res['预测排名']
+                })
+        print(f"\n包含排名的详细预测结果已成功保存到: '{output_csv_path}'")
+    except IOError:
+        print(f"\n错误: 无法将结果写入到 '{output_csv_path}'")
+
+    # --- 4. 进行排序准确度分析 (基于已计算好的排名) ---
+    rank_errors = [abs(res['预测排名'] - res['真实排名']) for res in results]
     mean_absolute_rank_error = np.mean(rank_errors)
 
-    # 4. 计算斯皮尔曼等级相关系数
     true_energies = [res['真实能量'] for res in results]
     pred_energies = [res['预测能量'] for res in results]
     spearman_corr, _ = spearmanr(true_energies, pred_energies)
@@ -194,12 +197,10 @@ def main(model_path = ''):
     if results_list:
         # 2. 需求一：输出结果到CSV文件
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_csv_path = f"predict_result/prediction_results_{timestamp}.csv"
-        save_predictions_to_csv(results_list, output_csv_path)
+        output_csv_path = f"predict_result/prediction_results_{MODEL_PATH[18:-4]}.csv"
+        save_and_analyze(results_list, output_csv_path)
 
-        # 3. 需求二：比较预测与实际排序的差异
-        analyze_ranking_accuracy(results_list)
 
 
 if __name__ == '__main__':
-    main('models/best_model_20250709_165937.pth')
+    main('models/best_model_20250709_220816.pth')

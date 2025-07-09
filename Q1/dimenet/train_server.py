@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Qt5Agg')
+matplotlib.use('Agg')
 
 # 导入DimeNet模型
 from dimenet import DimeNet
@@ -63,15 +63,7 @@ class Au20GeoDataset(Dataset):
 # ==================================================================
 # Part 2: Main Training & Evaluation Function
 # ==================================================================
-def train_and_evaluate():
-    global SAVEPATH
-    # 1. 参数设置
-    DATA_DIR = "data/au20"
-    SAVEPATH = get_savepath()
-    NUM_EPOCHS = 50
-    LEARNING_RATE = 1e-4
-    BATCH_SIZE = 32
-    CUTOFF_RADIUS = 6.0
+def train_and_evaluate(DATA_DIR,SAVEPATH,NUM_EPOCHS,LEARNING_RATE,BATCH_SIZE,CUTOFF_RADIUS):
 
     # 2. 数据集初始化
     dataset = Au20GeoDataset(data_dir=DATA_DIR)
@@ -110,8 +102,7 @@ def train_and_evaluate():
     ## 记录mae
     train_loss = []
     val_loss = []
-    fig, ax = plt.subplots()
-    plt.ion()
+
 
     for epoch in range(NUM_EPOCHS):
 
@@ -159,20 +150,6 @@ def train_and_evaluate():
         print(
             f"Epoch {epoch + 1:02d}/{NUM_EPOCHS} | Train Loss (Norm): {avg_train_loss:.6f} | Val MAE (eV): {avg_val_mae_ev:.6f}")
 
-        # 绘图
-        # 绘图
-        x_vals = list(range(1, len(train_loss) + 1))
-        ax.clear()
-        ax.plot(x_vals, train_loss, label='Train Loss', color='blue')
-        ax.plot(x_vals, val_loss, label='Validation Loss', color='orange')
-        ax.set_xlabel('Epoch')
-        ax.set_ylabel('Loss')
-        ax.set_title('Training Progress')
-        ax.legend()
-        ax.grid(True)
-        plt.pause(0.3)  # 暂停0.3秒模拟训练时间
-
-
         # 保存最优模型
         if avg_val_mae_ev < best_val_mae:
             best_val_mae = avg_val_mae_ev
@@ -181,12 +158,25 @@ def train_and_evaluate():
                 'model_state_dict': model.state_dict(),
                 'energy_mean': energy_mean,
                 'energy_std': energy_std,
-                }, SAVEPATH)
+            }, SAVEPATH)
 
+
+    # 绘图
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    x_vals = list(range(1, len(train_loss) + 1))
+    ax.plot(x_vals, train_loss, label='Train Loss', color='blue')
+    ax.plot(x_vals, val_loss, label='Validation Loss', color='orange')
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Loss')
+    ax.set_title('Training Progress')
+    ax.legend()
+    ax.grid(True)
     os.makedirs("fig", exist_ok=True)
     fig.savefig(f"fig/loss_curve_{SAVEPATH[18:-4]}.png", dpi=150, bbox_inches="tight")
-    plt.ioff()
-    plt.show()
+    plt.close(fig)
+
+
 
 
 def get_savepath():
@@ -199,6 +189,13 @@ def get_savepath():
 
 # main
 if __name__ == '__main__':
-    train_and_evaluate()
+    savepath = get_savepath()
+    train_and_evaluate(
+        DATA_DIR = "data/au20",
+        SAVEPATH = savepath,
+        NUM_EPOCHS = 10,
+        LEARNING_RATE = 1e-4,
+        BATCH_SIZE = 32,
+        CUTOFF_RADIUS = 6.0)
     import predict
-    predict.main(SAVEPATH)
+    predict.main(savepath)
