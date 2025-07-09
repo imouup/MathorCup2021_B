@@ -1,1 +1,1 @@
-"# MathorCup2021_B" 
+# MathorCup2021_B
