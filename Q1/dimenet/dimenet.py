@@ -571,7 +571,7 @@ class DimeNet(torch.nn.Module):
         dataset: Dataset,
         target: int,
     ) -> Tuple['DimeNet', Dataset, Dataset, Dataset]:  # pragma: no cover
-        r"""Returns a pre-trained :class:`DimeNet` model on the
+        r"""Returns a pre-trained :class:`DimeNet` models on the
         :class:`~torch_geometric.datasets.QM9` dataset, trained on the
         specified target :obj:`target`.
         """
@@ -730,7 +730,7 @@ class DimeNetPlusPlus(DimeNet):
     Directional Message Passing for Non-Equilibrium Molecules"
     <https://arxiv.org/abs/2011.14115>`_ paper.
 
-    :class:`DimeNetPlusPlus` is an upgrade to the :class:`DimeNet` model with
+    :class:`DimeNetPlusPlus` is an upgrade to the :class:`DimeNet` models with
     8x faster and 10% more accurate than :class:`DimeNet`.
 
     Args:
@@ -843,7 +843,7 @@ class DimeNetPlusPlus(DimeNet):
         target: int,
     ) -> Tuple['DimeNetPlusPlus', Dataset, Dataset,
                Dataset]:  # pragma: no cover
-        r"""Returns a pre-trained :class:`DimeNetPlusPlus` model on the
+        r"""Returns a pre-trained :class:`DimeNetPlusPlus` models on the
         :class:`~torch_geometric.datasets.QM9` dataset, trained on the
         specified target :obj:`target`.
         """

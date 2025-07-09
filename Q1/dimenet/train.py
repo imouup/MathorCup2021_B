@@ -5,6 +5,10 @@ from torch_geometric.loader import DataLoader
 import os
 import glob
 import numpy as np
+from datetime import datetime
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Qt5Agg')
 
 # 导入DimeNet模型
 from Q1.dimenet.dimenet import DimeNet
@@ -55,17 +59,18 @@ class Au20GeoDataset(Dataset):
             return None
 
 
+
 # ==================================================================
 # Part 2: Main Training & Evaluation Function
 # ==================================================================
 def train_and_evaluate():
     # 1. 参数设置
     DATA_DIR = "data/au20"
+    SAVEPATH = get_savepath()
     NUM_EPOCHS = 50
     LEARNING_RATE = 1e-4
     BATCH_SIZE = 32
     CUTOFF_RADIUS = 5.0
-    NUM_WORKERS = 4
 
     # 2. 数据集初始化
     dataset = Au20GeoDataset(data_dir=DATA_DIR)
@@ -100,6 +105,13 @@ def train_and_evaluate():
     print(f"\n--- Starting Training on {device} with Batch Size {BATCH_SIZE} ---")
 
     # 6. 训练和验证循环
+    best_val_mae = float('inf')
+    ## 记录mae
+    train_loss = []
+    val_loss = []
+    fig, ax = plt.subplots()
+    plt.ion()
+
     for epoch in range(NUM_EPOCHS):
 
         # 训练
@@ -120,6 +132,7 @@ def train_and_evaluate():
             optimizer.step()
             total_train_loss += loss.item()
         avg_train_loss = total_train_loss / len(train_loader)
+        train_loss.append(avg_train_loss)
 
         # 验证
         model.eval()
@@ -140,15 +153,46 @@ def train_and_evaluate():
 
         # 计算验证集的平均绝对误差(MAE)，单位是eV
         avg_val_mae_ev = total_val_mae_ev / len(val_dataset)
+        val_loss.append(avg_val_mae_ev)
 
         print(
             f"Epoch {epoch + 1:02d}/{NUM_EPOCHS} | Train Loss (Norm): {avg_train_loss:.6f} | Val MAE (eV): {avg_val_mae_ev:.6f}")
 
-    # ... (最终评估逻辑与验证循环类似) ...
+        # 绘图
+        # 绘图
+        x_vals = list(range(1, len(train_loss) + 1))
+        ax.clear()
+        ax.plot(x_vals, train_loss, label='Train Loss', color='blue')
+        ax.plot(x_vals, val_loss, label='Validation Loss', color='orange')
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Loss')
+        ax.set_title('Training Progress')
+        ax.legend()
+        ax.grid(True)
+        plt.pause(0.3)  # 暂停0.3秒模拟训练时间
 
 
-# ==================================================================
-# Part 3: Main Execution Guard
-# ==================================================================
+        # 保存最优模型
+        if avg_val_mae_ev < best_val_mae:
+            best_val_mae = avg_val_mae_ev
+            # 使用带时间戳的文件名进行保存
+            torch.save({
+                'model_state_dict': model.state_dict(),
+                'energy_mean': energy_mean,
+                'energy_std': energy_std,
+                }, SAVEPATH)
+    plt.ioff()
+    plt.show()
+
+
+def get_savepath():
+    # 获取当前时间
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # 构建包含时间戳的文件名
+    SAVE_PATH = f"models/best_model_{timestamp}.pth"
+    return SAVE_PATH
+
+
+# main
 if __name__ == '__main__':
     train_and_evaluate()
