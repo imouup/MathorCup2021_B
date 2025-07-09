@@ -54,6 +54,7 @@ train_and_evaluate(
 * 最终Train_loss和Val_loss将保存在`Q1/dimenet/fig/`目录下
 * 推理结果在`Q1/dimenet/predict_result`的csv文件中，时间标记与对应的模型相同
 
+
 <br>
 
 ### GUI环境
