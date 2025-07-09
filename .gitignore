@@ -1,4 +1,5 @@
 /.idea/
 /old/
-/Q1/data/
-/Q1/__pycache__/
+/Q1/dimenet/data/
+/Q1/dimenet/models/
+/Q1/dimenet/__pycache__/
