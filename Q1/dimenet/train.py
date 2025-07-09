@@ -12,7 +12,7 @@ matplotlib.use('Qt5Agg')
 
 # 导入DimeNet模型
 from Q1.dimenet.dimenet import DimeNet
-
+global SAVEPATH
 
 # ==================================================================
 # Part 1: 使用 torch_geometric 的标准方式定义数据集
@@ -64,13 +64,14 @@ class Au20GeoDataset(Dataset):
 # Part 2: Main Training & Evaluation Function
 # ==================================================================
 def train_and_evaluate():
+    global SAVEPATH
     # 1. 参数设置
     DATA_DIR = "data/au20"
     SAVEPATH = get_savepath()
     NUM_EPOCHS = 50
     LEARNING_RATE = 1e-4
     BATCH_SIZE = 32
-    CUTOFF_RADIUS = 5.0
+    CUTOFF_RADIUS = 6.0
 
     # 2. 数据集初始化
     dataset = Au20GeoDataset(data_dir=DATA_DIR)
@@ -196,3 +197,5 @@ def get_savepath():
 # main
 if __name__ == '__main__':
     train_and_evaluate()
+    import predict
+    predict.main(SAVEPATH)

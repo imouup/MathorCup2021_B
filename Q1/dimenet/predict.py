@@ -182,10 +182,10 @@ def analyze_ranking_accuracy(results: list):
 # ==================================================================
 # Part 3: 脚本主入口
 # ==================================================================
-def main():
+def main(model_path = ''):
     """主函数，用于设置路径并调用所有流程。"""
     # --- 请在这里修改您的路径 ---
-    MODEL_PATH = "models/best_model_20250709_153547.pth"
+    MODEL_PATH = model_path
     INPUT_DIR = "data/au20"  # 包含待预测.xyz文件的文件夹
 
     # 1. 执行预测，获取包含所有信息的完整结果列表
@@ -202,4 +202,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main('models/best_model_20250709_165937.pth')
