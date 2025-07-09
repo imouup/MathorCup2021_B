@@ -8,6 +8,7 @@
 * models
   * best_model_xxxx.pth
   * ......
+* predict_result
 * dimenet.py
 * train.py
 * predict.py
