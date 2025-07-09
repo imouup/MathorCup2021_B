@@ -2,13 +2,12 @@ import torch
 import torch.nn as nn
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
-import numpy as np
 import os
 import glob
-import time
+import numpy as np
 
 # 导入DimeNet模型
-from dimenet import DimeNet
+from Q1.dimenet.dimenet import DimeNet
 
 
 # ==================================================================
@@ -64,42 +63,44 @@ def train_and_evaluate():
     DATA_DIR = "data/au20"
     NUM_EPOCHS = 50
     LEARNING_RATE = 1e-4
-    BATCH_SIZE = 32  # 现在可以安全地使用大batch size
+    BATCH_SIZE = 32
     CUTOFF_RADIUS = 5.0
+    NUM_WORKERS = 4
 
-    # 2. 数据集初始化和加载
-    # 注意：这里我们使用了 torch_geometric.loader.DataLoader
+    # 2. 数据集初始化
     dataset = Au20GeoDataset(data_dir=DATA_DIR)
+    if not dataset: return
+
+    # 3. 数据集划分
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-    # PyG的DataLoader会自动处理图的批处理
+    # 计算训练集的均值和标准差
+    train_energies = [data.y.item() for data in train_dataset]
+    energy_mean = np.mean(train_energies)
+    energy_std = np.std(train_energies)
+    print(f"\n--- Data Stats (from training set) ---")
+    print(f"Energy Mean: {energy_mean:.6f}")
+    print(f"Energy Std Dev: {energy_std:.6f}")
+    print("--- Training will predict normalized energies ---")
+    # --- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ---
+
+    # 4. DataLoader 创建
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    # 3. 模型初始化
+    # 5. 模型初始化
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # 使用官方DimeNet模型
-    model = DimeNet(
-        hidden_channels=128,
-        out_channels=1,  # 预测一个能量值
-        num_blocks=6,
-        num_bilinear=8,
-        num_spherical=7,
-        num_radial=6,
-        cutoff=CUTOFF_RADIUS,
-    ).to(device)
-
-    loss_fn = nn.MSELoss()
+    model = DimeNet(hidden_channels=128, out_channels=1, num_blocks=6, num_bilinear=8,
+                    num_spherical=7, num_radial=6, cutoff=CUTOFF_RADIUS).to(device)
+    loss_fn = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    print(f"\n--- Starting Training on {device} with Batch Size {BATCH_SIZE} using official DimeNet ---")
+    print(f"\n--- Starting Training on {device} with Batch Size {BATCH_SIZE} ---")
 
-    # 4. 训练和验证循环
+    # 6. 训练和验证循环
     for epoch in range(NUM_EPOCHS):
-        epoch_start_time = time.time()
 
         # 训练
         model.train()
@@ -107,8 +108,14 @@ def train_and_evaluate():
         for batch in train_loader:
             batch = batch.to(device)
             optimizer.zero_grad()
-            pred = model(batch.z, batch.pos, batch.batch)
-            loss = loss_fn(pred.squeeze(), batch.y)
+
+            # 模型预测的是归一化后的能量
+            pred_norm = model(batch.z, batch.pos, batch.batch)
+
+            # 将真实能量也进行归一化，然后计算loss
+            true_norm = (batch.y - energy_mean) / energy_std
+            loss = loss_fn(pred_norm.squeeze(), true_norm)
+
             loss.backward()
             optimizer.step()
             total_train_loss += loss.item()
@@ -116,19 +123,28 @@ def train_and_evaluate():
 
         # 验证
         model.eval()
-        total_val_loss = 0
+        total_val_mae_ev = 0  # 我们在验证时直接计算真实尺度的MAE (eV)
         with torch.no_grad():
             for batch in val_loader:
                 batch = batch.to(device)
-                pred = model(batch.z, batch.pos, batch.batch)
-                loss = loss_fn(pred.squeeze(), batch.y)
-                total_val_loss += loss.item()
-        avg_val_loss = total_val_loss / len(val_loader)
+
+                # 模型预测归一化能量
+                pred_norm = model(batch.z, batch.pos, batch.batch)
+
+                # 将预测结果反归一化，得到真实的能量预测值 (eV)
+                pred_ev = pred_norm.squeeze() * energy_std + energy_mean
+
+                # 在真实尺度上计算绝对误差
+                abs_error = torch.abs(pred_ev - batch.y)
+                total_val_mae_ev += abs_error.sum().item()
+
+        # 计算验证集的平均绝对误差(MAE)，单位是eV
+        avg_val_mae_ev = total_val_mae_ev / len(val_dataset)
 
         print(
-            f"Epoch {epoch + 1:02d}/{NUM_EPOCHS} | Train Loss: {avg_train_loss:.6f} | Val Loss: {avg_val_loss:.6f} | Time: {time.time() - epoch_start_time:.2f}s")
+            f"Epoch {epoch + 1:02d}/{NUM_EPOCHS} | Train Loss (Norm): {avg_train_loss:.6f} | Val MAE (eV): {avg_val_mae_ev:.6f}")
 
-    # ... (最终评估逻辑与此类似) ...
+    # ... (最终评估逻辑与验证循环类似) ...
 
 
 # ==================================================================
