@@ -14,6 +14,11 @@ matplotlib.use('Qt5Agg')
 from dimenet import DimeNet
 global SAVEPATH
 
+# mkdir
+os.makedirs("fig", exist_ok=True)
+os.makedirs("models", exist_ok=True)
+os.makedirs("predict_result", exist_ok=True)
+
 # ==================================================================
 # Part 1: 使用 torch_geometric 的标准方式定义数据集
 # ==================================================================
@@ -183,7 +188,6 @@ def train_and_evaluate():
                 'energy_std': energy_std,
                 }, SAVEPATH)
 
-    os.makedirs("fig", exist_ok=True)
     fig.savefig(f"fig/loss_curve_{SAVEPATH[18:-4]}.png", dpi=150, bbox_inches="tight")
     plt.ioff()
     plt.show()
