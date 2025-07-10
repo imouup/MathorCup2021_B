@@ -239,6 +239,18 @@ def train_and_evaluate(
     print("\n--- Training Finished ---")
     fig, ax = plt.subplots(1, 2, figsize=(16, 6))
 
+    # 绘制训练损失分解图
+    ax[0].plot(history['epoch'], history['train_total_loss'], label='Total Train Loss', color='black', linewidth=2)
+    ax[0].plot(history['epoch'], history['train_energy_loss'], label='Energy Train Loss (Norm)', color='blue',
+               linestyle='--')
+    ax[0].plot(history['epoch'], history['train_force_loss'], label=f"Force Train Loss (x{FORCE_WEIGHT})", color='red',
+               linestyle='--')
+    ax[0].set_xlabel('Epoch')
+    ax[0].set_ylabel('Loss Value')
+    ax[0].set_title('Training Loss Breakdown')
+    ax[0].legend()
+    ax[0].grid(True)
+    ax[0].set_yscale('log')  # 使用对数坐标轴以便观察
 
     # 绘制训练损失和验证Loss对比图
     ax[0].plot(history['epoch'], history['train_energy_loss'], label='Energy Train Loss (Norm)', color='blue')
