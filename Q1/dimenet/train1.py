@@ -65,21 +65,14 @@ class Au20NpzDataset(Dataset):
 # ==================================================================
 # Part 2: Main Training & Evaluation Function
 # ==================================================================
-def train_and_evaluate():
-    # 1. 参数设置
-    # --- 您可以在这里修改参数 ---
-    DATA_FILE = "data/au20_annotated_dataset.npz"  # <--- 修改为您的 .npz 文件路径
-    NUM_EPOCHS = 50
-    LEARNING_RATE = 1e-4
-    BATCH_SIZE = 16
-    CUTOFF_RADIUS = 6.0
-    FORCE_WEIGHT = 0.1  # <--- 力的损失在总损失中的权重 (rho)
-    # --------------------------
-
-    # 动态生成模型保存路径
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    SAVEPATH = f"models/best_model_force_{timestamp}.pth"
-    print(f"Models will be saved to: {SAVEPATH}")
+def train_and_evaluate(
+    DATA_FILE = "data/au20_annotated_dataset.npz",
+    NUM_EPOCHS = 50,
+    LEARNING_RATE = 1e-4,
+    BATCH_SIZE = 16,
+    CUTOFF_RADIUS = 6.0,
+    FORCE_WEIGHT = 0.1,
+    ):
 
     # 2. 数据集初始化
     dataset = Au20NpzDataset(npz_path=DATA_FILE)
@@ -266,4 +259,20 @@ def train_and_evaluate():
 
 # main
 if __name__ == '__main__':
-    train_and_evaluate()
+    # 生成模型保存路径
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    SAVEPATH = f"models/best_model_force_{timestamp}.pth"
+    print(f"Models will be saved to: {SAVEPATH}")
+
+    train_and_evaluate(
+    # 1. 参数设置
+    DATA_FILE = "data/au20_annotated_dataset.npz",  # <--- 修改为您的 .npz 文件路径
+    NUM_EPOCHS = 50,
+    LEARNING_RATE = 1e-4,
+    BATCH_SIZE = 16,
+    CUTOFF_RADIUS = 6.0,
+    FORCE_WEIGHT = 0.1,  # <--- 力的损失在总损失中的权重 (rho)
+    )
+
+    import predict1
+    predict1.main(SAVEPATH)
