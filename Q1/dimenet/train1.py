@@ -253,14 +253,14 @@ def train_and_evaluate(
     ax[0].set_yscale('log')  # 使用对数坐标轴以便观察
 
     # 绘制训练损失和验证Loss对比图
-    ax[0].plot(history['epoch'], history['train_energy_loss'], label='Energy Train Loss (Norm)', color='blue')
-    ax[0].plot(history['epoch'], history['val_energy_mae'], label='Energy Val MAE (eV)', color='orange')
-    ax[0].set_xlabel('Epoch')
-    ax[0].set_ylabel('Error Value')
-    ax[0].set_title('Training vs. Validation (Energy)')
-    ax[0].legend()
-    ax[0].grid(True)
-    ax[0].set_yscale('log')
+    ax[1].plot(history['epoch'], history['train_energy_loss'], label='Energy Train Loss (Norm)', color='blue')
+    ax[1].plot(history['epoch'], history['val_energy_mae'], label='Energy Val MAE (eV)', color='orange')
+    ax[1].set_xlabel('Epoch')
+    ax[1].set_ylabel('Error Value')
+    ax[1].set_title('Training vs. Validation (Energy)')
+    ax[1].legend()
+    ax[1].grid(True)
+    ax[1].set_yscale('log')
 
     plt.tight_layout()
     fig_path = f"fig/loss_curve_force_{timestamp}.png"
@@ -283,7 +283,7 @@ if __name__ == '__main__':
     LEARNING_RATE = 1e-4,
     BATCH_SIZE = 16,
     CUTOFF_RADIUS = 6.0,
-    FORCE_WEIGHT = 0.1,  # <--- 力的损失在总损失中的权重 (rho)
+    FORCE_WEIGHT = 0.2,  # <--- 力的损失在总损失中的权重 (rho)
     )
 
     import predict1
