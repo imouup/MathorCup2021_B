@@ -15,6 +15,7 @@ from dimenet import DimeNet
 # 创建必要的输出文件夹
 os.makedirs("fig", exist_ok=True)
 os.makedirs("models", exist_ok=True)
+os.makedirs("valset_record", exist_ok=True)
 
 
 # ==================================================================
@@ -72,6 +73,8 @@ def train_and_evaluate(
     BATCH_SIZE = 16,
     CUTOFF_RADIUS = 6.0,
     FORCE_WEIGHT = 0.1,
+    SAVEPATH = "models/best_model_force.pth",
+    VAL_SET_SAVE_PATH = 'vaset_record/valset.npz',
     ):
 
     # 2. 数据集初始化
@@ -94,6 +97,29 @@ def train_and_evaluate(
     print(f"Energy Mean: {energy_mean:.6f}")
     print(f"Energy Std Dev: {energy_std:.6f}")
     print("--- Training will predict normalized energies ---")
+
+    # 保存验证集到/valset_record目录下的npz文件中
+
+    print(f"\n正在导出包含 {len(val_dataset)} 个样本的验证集...")
+    val_coords, val_energies, val_forces, val_atom_nums = [], [], [], []
+    for i in range(len(val_dataset)):
+        data_point = val_dataset[i]
+        val_coords.append(data_point.pos.numpy())
+        val_energies.append(data_point.y.numpy())
+        val_forces.append(data_point.force.numpy())
+        val_atom_nums.append(data_point.z.numpy())
+
+    # 使用 np.savez 来保存多个数组到.npz文件
+    np.savez(
+        VAL_SET_SAVE_PATH,
+        coords=np.array(val_coords),
+        energies=np.array(val_energies).squeeze(),  # squeeze() 去掉多余的维度
+        forces=np.array(val_forces),
+        atomic_numbers=np.array(val_atom_nums)
+    )
+    print(f"验证集已成功保存到: '{VAL_SET_SAVE_PATH}'")
+
+
 
     # 4. DataLoader 创建
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -273,8 +299,9 @@ def train_and_evaluate(
 if __name__ == '__main__':
     # 生成模型保存路径
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    SAVEPATH = f"models/best_model_force_{timestamp}.pth"
-    print(f"Models will be saved to: {SAVEPATH}")
+    savepath = f"models/best_model_force_{timestamp}.pth"
+    valset_save_path = f"valset_record/valset_{timestamp}.npz"
+    print(f"Models will be saved to: {savepath}")
 
     train_and_evaluate(
     # 1. 参数设置
@@ -283,8 +310,10 @@ if __name__ == '__main__':
     LEARNING_RATE = 1e-4,
     BATCH_SIZE = 16,
     CUTOFF_RADIUS = 6.0,
-    FORCE_WEIGHT = 0.2,  # <--- 力的损失在总损失中的权重 (rho)
+    FORCE_WEIGHT = 0.1,  # <--- 力的损失在总损失中的权重 (rho)
+    SAVEPATH=savepath,
+    VAL_SET_SAVE_PATH = valset_save_path
     )
 
     import predict1
-    predict1.main(SAVEPATH)
+    predict1.main(savepath,)

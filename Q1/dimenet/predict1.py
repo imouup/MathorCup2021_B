@@ -212,14 +212,14 @@ def save_and_analyze(results: list, output_csv_path: str, energy_mae: float, for
 # ==================================================================
 # Part 3: 脚本主入口
 # ==================================================================
-def main(model_path=''):
+def main(model_path='',data_path=''):
     """主函数，用于设置路径并调用所有流程。"""
     if not model_path:
         print("Error: Please provide a model path.")
         return
 
     # --- 请在这里修改您的数据文件路径 ---
-    INPUT_NPZ_FILE = "data/au20_annotated_dataset.npz"  # 包含待预测数据的.npz文件
+    INPUT_NPZ_FILE = data_path  # 包含待预测数据的.npz文件
     # ---------------------------------
 
     # 1. 执行预测
@@ -242,4 +242,5 @@ if __name__ == '__main__':
     # 将下面的路径替换为您通过新训练脚本保存的最新模型路径
     # 例如: 'models/best_model_force_20250710_143000.pth'
     latest_model_path = 'models/best_model_force_20250710_123529.pth'
-    main(model_path=latest_model_path)
+    latest_valset_path = "data/au20_annotated_dataset.npz"
+    main(latest_model_path,latest_valset_path)
