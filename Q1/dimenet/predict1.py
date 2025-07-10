@@ -241,6 +241,6 @@ if __name__ == '__main__':
     # --- 使用示例 ---
     # 将下面的路径替换为您通过新训练脚本保存的最新模型路径
     # 例如: 'models/best_model_force_20250710_143000.pth'
-    latest_model_path = 'models/best_model_force_20250710_123529.pth'
-    latest_valset_path = "data/au20_annotated_dataset.npz"
+    latest_model_path = "models/best_model_force_20250710_205634.pth"
+    latest_valset_path = "valset_record/valset_20250710_205634.npz"
     main(latest_model_path,latest_valset_path)
