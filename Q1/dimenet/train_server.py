@@ -14,60 +14,18 @@ matplotlib.use('Agg')
 from dimenet import DimeNet
 global SAVEPATH
 
+# 导入自定义数据集类
+from train import Au20GeoDataset
+# 从 train.py 导入 get_savepath 函数
+from train import get_savepath
+
 # mkdir
 os.makedirs("fig", exist_ok=True)
 os.makedirs("models", exist_ok=True)
 os.makedirs("predict_result", exist_ok=True)
 
-# ==================================================================
-# Part 1: 使用 torch_geometric 的标准方式定义数据集
-# ==================================================================
-class Au20GeoDataset(Dataset):
-    """
-    一个简洁的数据集，只负责读取文件并创建 torch_geometric.data.Data 对象。
-    图的构建将在训练时即时高效完成。
-    """
 
-    def __init__(self, data_dir):
-        super().__init__()
-        self.filepaths = glob.glob(os.path.join(data_dir, '*.xyz*'))
-        print(f"Found {len(self.filepaths)} files.")
-
-    def len(self):
-        return len(self.filepaths)
-
-    def get(self, idx):
-        filepath = self.filepaths[idx]
-
-        try:
-            with open(filepath, 'r') as f:
-                lines = f.readlines()
-
-            if len(lines) < 22: return None
-
-            num_atoms = int(lines[0])
-            energy = float(lines[1].split()[-1])
-
-            positions = []
-            for i in range(2, 2 + num_atoms):
-                parts = lines[i].strip().split()
-                positions.append([float(p) for p in parts[1:4]])
-
-            pos = torch.tensor(positions, dtype=torch.float32)
-            y = torch.tensor([energy], dtype=torch.float32)
-            z = torch.full((num_atoms,), 0, dtype=torch.long)  # 使用0代表金原子
-
-            # 创建一个Data对象
-            data = Data(z=z, pos=pos, y=y, filepath=filepath)
-            return data
-        except (ValueError, IndexError):
-            return None
-
-
-
-# ==================================================================
-# Part 2: Main Training & Evaluation Function
-# ==================================================================
+# train
 def train_and_evaluate(DATA_DIR,SAVEPATH,NUM_EPOCHS,LEARNING_RATE,BATCH_SIZE,CUTOFF_RADIUS):
 
     # 2. 数据集初始化
@@ -187,15 +145,6 @@ def train_and_evaluate(DATA_DIR,SAVEPATH,NUM_EPOCHS,LEARNING_RATE,BATCH_SIZE,CUT
     fig.savefig(f"fig/loss_curve_{SAVEPATH[18:-4]}.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
 
-
-
-
-def get_savepath():
-    # 获取当前时间
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # 构建包含时间戳的文件名
-    SAVE_PATH = f"models/best_model_{timestamp}.pth"
-    return SAVE_PATH
 
 
 # main
