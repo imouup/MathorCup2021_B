@@ -99,6 +99,7 @@ def train_and_evaluate(DATA_DIR,SAVEPATH,NUM_EPOCHS,LEARNING_RATE,BATCH_SIZE,CUT
                     num_spherical=7, num_radial=6, cutoff=CUTOFF_RADIUS).to(device)
     loss_fn = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10, verbose=True,min_lr=1e-7)
 
     print(f"\n--- Starting Training on {device} with Batch Size {BATCH_SIZE} ---")
 
@@ -129,6 +130,7 @@ def train_and_evaluate(DATA_DIR,SAVEPATH,NUM_EPOCHS,LEARNING_RATE,BATCH_SIZE,CUT
             optimizer.step()
             total_train_loss += loss.item()
         avg_train_loss = total_train_loss / len(train_loader)
+        # 记录训练集的MAE
         train_loss.append(avg_train_loss)
 
         # 验证
@@ -150,6 +152,10 @@ def train_and_evaluate(DATA_DIR,SAVEPATH,NUM_EPOCHS,LEARNING_RATE,BATCH_SIZE,CUT
 
         # 计算验证集的平均绝对误差(MAE)，单位是eV
         avg_val_mae_ev = total_val_mae_ev / len(val_dataset)
+
+        # 更新学习率
+        scheduler.step(avg_val_mae_ev)
+        # 记录验证集的MAE
         val_loss.append(avg_val_mae_ev)
 
         print(
