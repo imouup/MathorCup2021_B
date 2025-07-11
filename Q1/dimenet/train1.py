@@ -102,12 +102,14 @@ def train_and_evaluate(
 
     print(f"\n正在导出包含 {len(val_dataset)} 个样本的验证集...")
     val_coords, val_energies, val_forces, val_atom_nums = [], [], [], []
+
     for i in range(len(val_dataset)):
         data_point = val_dataset[i]
         val_coords.append(data_point.pos.numpy())
         val_energies.append(data_point.y.numpy())
         val_forces.append(data_point.force.numpy())
-        val_atom_nums.append(data_point.z.numpy())
+        if i == 0:
+            val_atom_nums.append(data_point.z.numpy())
 
     # 使用 np.savez 来保存多个数组到.npz文件
     np.savez(
@@ -306,7 +308,7 @@ if __name__ == '__main__':
     train_and_evaluate(
     # 1. 参数设置
     DATA_FILE = "data/au20_annotated_dataset.npz",  # <--- 修改为您的 .npz 文件路径
-    NUM_EPOCHS = 50,
+    NUM_EPOCHS = 25,
     LEARNING_RATE = 1e-4,
     BATCH_SIZE = 16,
     CUTOFF_RADIUS = 6.0,
@@ -316,4 +318,4 @@ if __name__ == '__main__':
     )
 
     import predict1
-    predict1.main(savepath,)
+    predict1.main(savepath,valset_save_path)
