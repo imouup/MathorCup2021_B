@@ -1,5 +1,8 @@
 /.idea/
 /old/
 /Q1/dimenet/data/
+/Q1/GA/data/
+/Q1/GA/models/
 /Q1/dimenet/models/
 /Q1/dimenet/__pycache__/
+test.py
